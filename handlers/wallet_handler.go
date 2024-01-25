@@ -101,7 +101,7 @@ func SendMoney(c *gin.Context) {
 		ID:         UuidWithoutHyphens(uuid.New()),
 		WalletID:   outgoingWallet.ID,
 		ToWalletID: UuidWithoutHyphens(uuid.MustParse(request.To)),
-		Amoung:     request.Amount,
+		Amount:     request.Amount,
 		Time:       time.Now(),
 	}
 
@@ -146,4 +146,32 @@ func SendMoney(c *gin.Context) {
 
 	// Возврат успешного ответа с информацией о транзакции
 	c.JSON(http.StatusOK, newTransaction)
+}
+
+// GetTransactionHistory обрабатывает запрос на получение истории транзакций
+func GetTransactionHistory(c *gin.Context) {
+	walletID := c.Param("walletId")
+
+	// Получение истории транзакций для указанного кошелька
+	transactions := []models.Transaction{}
+	if err := db.DB.Where("wallet_id = ? OR to_wallet_id = ?", walletID, walletID).Find(&transactions).Error; err != nil {
+		// Возвращение ошибки, если не удалось получить историю транзакций
+		utils.RespondWithError(c, http.StatusNotFound, "Wallet not found or error fetching transaction history")
+		return
+	}
+
+	// Преобразуем историю транзакций в формат, соответствующий OpenAPI
+	transactionHistory := make([]map[string]interface{}, 0)
+	for _, transaction := range transactions {
+		transactionEntry := map[string]interface{}{
+			"time":   transaction.Time,
+			"from":   transaction.WalletID,
+			"to":     transaction.ToWalletID,
+			"amount": transaction.Amount,
+		}
+		transactionHistory = append(transactionHistory, transactionEntry)
+	}
+
+	// Возвращаем успешный ответ с историей транзакций
+	c.JSON(http.StatusOK, transactionHistory)
 }
