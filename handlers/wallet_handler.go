@@ -91,6 +91,13 @@ func SendMoney(c *gin.Context) {
 		return
 	}
 
+	// Проверка, что у исходящего кошелька достаточно средств
+	if outgoingWallet.Balance < request.Amount {
+		// Возвращает ошибку, если баланс исходящего кошелька недостаточен
+		utils.RespondWithError(c, http.StatusBadRequest, "Insufficient funds in the outgoing wallet")
+		return
+	}
+
 	// Создание новой транзакции
 	newTransaction := models.Transaction{
 		ID:         UuidWithoutHyphens(uuid.New()),
