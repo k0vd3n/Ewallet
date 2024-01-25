@@ -35,11 +35,6 @@ func CreateWallet(c *gin.Context) {
 	c.JSON(http.StatusOK, newWallet)
 }
 
-// UuidWithoutHyphens возвращает UUID в виде строки без дефисов
-func UuidWithoutHyphens(u uuid.UUID) string {
-	return strings.ReplaceAll(u.String(), "-", "")
-}
-
 // SendMoney обрабатывает запрос на перевод средств
 func SendMoney(c *gin.Context) {
 	// Получение идентификатора кошелька из параметра запроса
@@ -174,4 +169,25 @@ func GetTransactionHistory(c *gin.Context) {
 
 	// Возвращаем успешный ответ с историей транзакций
 	c.JSON(http.StatusOK, transactionHistory)
+}
+
+// GetWallet обрабатывает запрос на получение текущего состояния кошелька
+func GetWallet(c *gin.Context) {
+	walletID := c.Param("walletId")
+
+	// Поиск кошелька в бд
+	wallet := models.Wallet{}
+	if err := db.DB.Where("id = ?", walletID).First(&wallet).Error; err != nil {
+		// Если кошелек не найден возвращается ошибка 404
+		utils.RespondWithError(c, http.StatusNotFound, "Wallet not found")
+		return
+	}
+
+	// Возвращаем информацию о кошельке в успешном ответе
+	c.JSON(http.StatusOK, wallet)
+}
+
+// UuidWithoutHyphens возвращает UUID в виде строки без дефисов
+func UuidWithoutHyphens(u uuid.UUID) string {
+	return strings.ReplaceAll(u.String(), "-", "")
 }
