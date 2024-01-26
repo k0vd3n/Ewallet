@@ -13,8 +13,18 @@ import (
 	"github.com/google/uuid"
 )
 
+// WalletHandler обработчик для операций с кошельком
+type WalletHandler struct {
+	walletDB db.WalletDatabase
+}
+
+// NewWalletHandler создает новый экземпляр WalletHandler
+func NewWalletHandler(walletDB db.WalletDatabase) *WalletHandler {
+	return &WalletHandler{walletDB: walletDB}
+}
+
 // CreateWallet обрабатывает запрос на создание кошелька
-func CreateWallet(c *gin.Context) {
+func (wh *WalletHandler) CreateWallet(c *gin.Context) {
 	// Генерация уникального ID для нового кошелька
 	newUUID := uuid.New()
 	newUUIDString := UuidWithoutHyphens(newUUID)
@@ -25,7 +35,7 @@ func CreateWallet(c *gin.Context) {
 	}
 
 	// Вставляем кошелек в базу данных
-	if err := db.DB.Create(&newWallet).Error; err != nil {
+	if err := wh.walletDB.CreateWallet(&newWallet); err != nil {
 		// В случае ошибки вставки, возвращаем ошибку
 		utils.RespondWithError(c, http.StatusBadRequest, "Failed to create wallet")
 		return
@@ -36,7 +46,7 @@ func CreateWallet(c *gin.Context) {
 }
 
 // SendMoney обрабатывает запрос на перевод средств
-func SendMoney(c *gin.Context) {
+func (wh *WalletHandler) SendMoney(c *gin.Context) {
 	// Получение идентификатора кошелька из параметра запроса
 	walletID := c.Param("walletId")
 
@@ -60,13 +70,13 @@ func SendMoney(c *gin.Context) {
 	}
 
 	// Начало транзакции
-	tx := db.DB.Begin()
+	tx := wh.walletDB.Begin()
 
 	// Обработка ошибок при начале транзакции
-	if tx.Error != nil {
+	/*if tx.Error != nil {
 		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to start transaction")
 		return
-	}
+	}*/
 
 	defer func() {
 		// В случае паники отменяем транзакцию
@@ -77,8 +87,8 @@ func SendMoney(c *gin.Context) {
 	}()
 
 	// Проверка, существует ли исходящий кошелек
-	outgoingWallet := models.Wallet{}
-	if err := tx.Where("id = ?", walletID).First(&outgoingWallet).Error; err != nil {
+	outgoingWallet, err := tx.GetWalletByID(walletID)
+	if err != nil {
 		// Возвращает ошибку, если кошелек не найден
 		utils.RespondWithError(c, http.StatusNotFound, "Outgoing wallet not found")
 		return
@@ -108,7 +118,7 @@ func SendMoney(c *gin.Context) {
 	}
 
 	// Вставка транзакции в базу данных
-	if err := tx.Create(&newTransaction).Error; err != nil {
+	if err := tx.CreateTransaction(&newTransaction); err != nil {
 		// В случае ошибки вставки происходит отмена транзакции
 		tx.Rollback()
 		utils.RespondWithError(c, http.StatusBadRequest, "Failed to create transaction")
@@ -117,16 +127,16 @@ func SendMoney(c *gin.Context) {
 
 	// Обновление баланса исходяшего кошелька
 	outgoingWallet.Balance -= request.Amount
-	if err := tx.Save(&outgoingWallet).Error; err != nil {
+	if err := tx.UpdateWalletBalance(outgoingWallet); err != nil {
 		// В случае ошибки обновления баланса происходит отмента транзакции
 		tx.Rollback()
 		utils.RespondWithError(c, http.StatusBadRequest, "Failed to update outgoing wallet balance")
 		return
 	}
 
-	// Получение информаци о входящем кошельке
-	incomingWallet := models.Wallet{}
-	if err := tx.Where("id = ?", request.To).First(&incomingWallet).Error; err != nil {
+	// Получение информации о входящем кошельке
+	incomingWallet, err := tx.GetWalletByID(request.To)
+	if err != nil {
 		// Возвращает ошибку, если входящий кошелек не был найден
 		// Отмена транзакции
 		tx.Rollback()
@@ -136,7 +146,7 @@ func SendMoney(c *gin.Context) {
 
 	// Обновление баланса входящего кошелька
 	incomingWallet.Balance += request.Amount
-	if err := tx.Save(&incomingWallet).Error; err != nil {
+	if err := tx.UpdateWalletBalance(incomingWallet); err != nil {
 		// В случае ошибки обеовления баланса происходит отмена транзакции
 		tx.Rollback()
 		utils.RespondWithError(c, http.StatusBadRequest, "Failed to update incoming wallet balance")
@@ -144,19 +154,22 @@ func SendMoney(c *gin.Context) {
 	}
 
 	// Фиксирование транзакции
-	tx.Commit()
+	if err := tx.Commit(); err != nil {
+		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to commit transaction")
+		return
+	}
 
 	// Возврат успешного ответа с информацией о транзакции
 	c.JSON(http.StatusOK, newTransaction)
 }
 
 // GetTransactionHistory обрабатывает запрос на получение истории транзакций
-func GetTransactionHistory(c *gin.Context) {
+func (wh *WalletHandler) GetTransactionHistory(c *gin.Context) {
 	walletID := c.Param("walletId")
 
 	// Получение истории транзакций для указанного кошелька
-	transactions := []models.Transaction{}
-	if err := db.DB.Where("wallet_id = ? OR to_wallet_id = ?", walletID, walletID).Find(&transactions).Error; err != nil {
+	transactions, err := wh.walletDB.GetTransactionHistory(walletID)
+	if err != nil {
 		// Возвращение ошибки, если не удалось получить историю транзакций
 		utils.RespondWithError(c, http.StatusNotFound, "Wallet not found or error fetching transaction history")
 		return
@@ -179,13 +192,13 @@ func GetTransactionHistory(c *gin.Context) {
 }
 
 // GetWallet обрабатывает запрос на получение текущего состояния кошелька
-func GetWallet(c *gin.Context) {
+func (wh *WalletHandler) GetWallet(c *gin.Context) {
 	walletID := c.Param("walletId")
 
 	// Поиск кошелька в бд
-	wallet := models.Wallet{}
-	if err := db.DB.Where("id = ?", walletID).First(&wallet).Error; err != nil {
-		// Если кошелек не найден возвращается ошибка 404
+	wallet, err := wh.walletDB.GetWalletByID(walletID)
+	if err != nil {
+		// Если кошелек не найден, возвращается ошибка 404
 		utils.RespondWithError(c, http.StatusNotFound, "Wallet not found")
 		return
 	}

@@ -1,17 +1,20 @@
 package api
 
 import (
+	"Ewallet/db"
 	"Ewallet/handlers"
 
 	"github.com/gin-gonic/gin"
 )
 
-func InitRoutes(r *gin.Engine) {
+func InitRoutes(r *gin.Engine, walletDB db.WalletDatabase) {
 	walletGroup := r.Group("/api/v1/wallet")
 	{
-		walletGroup.POST("/", handlers.CreateWallet)
-		walletGroup.POST("/:walletId/send", handlers.SendMoney)
-		walletGroup.GET("/:walletId/history", handlers.GetTransactionHistory)
-		walletGroup.GET("/:walletId", handlers.GetWallet)
+		walletHandler := handlers.NewWalletHandler(walletDB)
+
+		walletGroup.POST("/", walletHandler.CreateWallet)
+		walletGroup.POST("/:walletId/send", walletHandler.SendMoney)
+		walletGroup.GET("/:walletId/history", walletHandler.GetTransactionHistory)
+		walletGroup.GET("/:walletId", walletHandler.GetWallet)
 	}
 }

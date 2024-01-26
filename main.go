@@ -8,10 +8,12 @@ import (
 )
 
 func main() {
-	// Инициализация маршрутов и подключение к базе данных
+	// Инициализация подключения к базе данных
+	walletDB := db.InitDB()
+	// Создание роутера Gin
 	r := gin.Default()
-	db.InitDB()
-	api.InitRoutes(r)
+	// Инициализация маршрутов
+	api.InitRoutes(r, walletDB)
 
 	// Запуск сервера
 	r.Run(":8080")
