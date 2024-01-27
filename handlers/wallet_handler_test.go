@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -15,6 +16,16 @@ import (
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestMain(m *testing.M) {
+	// Установка режима realese перед запуском всех тестов
+	gin.SetMode(gin.ReleaseMode)
+
+	// Запуск всех тестов и сохранение результатов покрытия в файл
+	exitCode := m.Run()
+
+	os.Exit(exitCode)
+}
 
 func TestCreateWallet(t *testing.T) {
 	ctrl := gomock.NewController(t)
