@@ -186,3 +186,45 @@ func TestGetTransactionHistory(t *testing.T) {
 		assert.Equal(t, expectedTimeStr, responseTransactions[i]["time"])
 	}
 }
+
+func TestGetWallet(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	// Создание мока для интерфейса WalletDatabase
+	mockWalletDB := mock_db.NewMockWalletDatabase(ctrl)
+
+	// Создание обработчика
+	walletHandler := NewWalletHandler(mockWalletDB)
+
+	// Создание фейкового Gin контекста
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+
+	// Ожидаемый идентификатор кошелька
+	expectedWalletID := "fake_wallet_id"
+
+	// Установление параметра запроса
+	c.Params = []gin.Param{{Key: "walletId", Value: expectedWalletID}}
+
+	// Ожидаемый кошелек
+	expectedWallet := &models.Wallet{
+		ID:      expectedWalletID,
+		Balance: 100.0,
+	}
+
+	// Установление ожидания вызова GetWalletByID у mockWalletDB
+	mockWalletDB.EXPECT().GetWalletByID(expectedWalletID).Return(expectedWallet, nil)
+
+	// Вызов функции GetWallet
+	walletHandler.GetWallet(c)
+
+	// Проверка статуса кода и возвращенного кошелька
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var responseWallet models.Wallet
+	utils.ParseResponseJSON(w.Body, &responseWallet)
+
+	assert.Equal(t, expectedWallet.ID, responseWallet.ID)
+	assert.Equal(t, expectedWallet.Balance, responseWallet.Balance)
+}
