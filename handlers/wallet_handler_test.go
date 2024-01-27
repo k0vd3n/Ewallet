@@ -121,3 +121,68 @@ func TestSendMoney(t *testing.T) {
 	assert.Equal(t, 50.0, responseTransaction.Amount)
 	assert.True(t, responseTransaction.Time.Before(time.Now().Add(time.Minute)))
 }
+
+func TestGetTransactionHistory(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	// Создание мока для интерфейса WalletDatabase
+	mockWalletDB := mock_db.NewMockWalletDatabase(ctrl)
+
+	// Создание нового WalletHandler
+	walletHandler := NewWalletHandler(mockWalletDB)
+
+	// Создание фейкового Gin контекста
+	w := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(w)
+
+	// Ожидаемый идентификатор кошелька
+	expectedWalletID := "fake_wallet_id"
+
+	// Установление параметры запроса
+	c.Params = []gin.Param{{Key: "walletId", Value: expectedWalletID}}
+
+	// Ожидаемые транзакции
+	expectedTransactions := []models.Transaction{
+		{
+			ID:         "fake_transaction_id_1",
+			WalletID:   expectedWalletID,
+			ToWalletID: "fake_to_wallet_id_1",
+			Amount:     50.0,
+			Time:       time.Now(),
+		},
+		{
+			ID:         "fake_transaction_id_2",
+			WalletID:   expectedWalletID,
+			ToWalletID: "fake_to_wallet_id_2",
+			Amount:     25.0,
+			Time:       time.Now(),
+		},
+	}
+
+	// Установление  ожидания вызова GetTransactionHistory у mockWalletDB
+	mockWalletDB.EXPECT().GetTransactionHistory(expectedWalletID).Return(expectedTransactions, nil)
+
+	// Вызов функции GetTransactionHistory
+	walletHandler.GetTransactionHistory(c)
+
+	// Проверка статуса кода и возвращенные транзакции
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var responseTransactions []map[string]interface{}
+	utils.ParseResponseJSON(w.Body, &responseTransactions)
+
+	// Проверка того, что количество возвращенных транзакций соответствует ожидаемому
+	assert.Equal(t, len(expectedTransactions), len(responseTransactions))
+
+	// Проверка деталей каждой транзакции
+	for i, expectedTransaction := range expectedTransactions {
+		assert.Equal(t, expectedTransaction.WalletID, responseTransactions[i]["from"])
+		assert.Equal(t, expectedTransaction.ToWalletID, responseTransactions[i]["to"])
+		assert.Equal(t, expectedTransaction.Amount, responseTransactions[i]["amount"])
+
+		// Проверка того, что время соответствует ожидаемому с некоторой допустимой погрешностью
+		expectedTimeStr := expectedTransactions[i].Time.Format(time.RFC3339Nano)
+		assert.Equal(t, expectedTimeStr, responseTransactions[i]["time"])
+	}
+}
