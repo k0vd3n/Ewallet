@@ -26,13 +26,6 @@ RUN apk --no-cache add ca-certificates
 # Копирование скомпилированного бинарного файла из предыдущего образа
 COPY --from=build /app/EWallet .
 
-# Задаем переменные окружения для подключения к базе данных
-ENV DB_HOST=localhost
-ENV DB_PORT=5432
-ENV DB_USER=postgres
-ENV DB_PASSWORD=root
-ENV DB_NAME=EWallet
-
 # Порт, который будет прослушиваться вашим приложением
 EXPOSE 8080
 
