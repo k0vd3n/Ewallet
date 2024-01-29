@@ -4,7 +4,6 @@ import (
 	"Ewallet/db"
 	"Ewallet/models"
 	"Ewallet/utils"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -61,22 +60,9 @@ func (wh *WalletHandler) SendMoney(c *gin.Context) {
 		utils.RespondWithError(c, http.StatusBadRequest, "Invalid request data")
 		return
 	}
-	// Проверка количества знаков после запятой в сумме перевода
-	amountStr := fmt.Sprintf("%.2f", request.Amount)
-	if strings.Contains(amountStr, ".") && len(amountStr[strings.Index(amountStr, ".")+1:]) > 2 {
-		// Возвращает ошибку, если количество знаков после запятой больше двух
-		utils.RespondWithError(c, http.StatusBadRequest, "Invalid amount format")
-		return
-	}
 
 	// Начало транзакции
 	tx := wh.walletDB.Begin()
-
-	// Обработка ошибок при начале транзакции
-	/*if tx.Error != nil {
-		utils.RespondWithError(c, http.StatusInternalServerError, "Failed to start transaction")
-		return
-	}*/
 
 	defer func() {
 		// В случае паники отменяем транзакцию
@@ -91,6 +77,16 @@ func (wh *WalletHandler) SendMoney(c *gin.Context) {
 	if err != nil {
 		// Возвращает ошибку, если кошелек не найден
 		utils.RespondWithError(c, http.StatusNotFound, "Outgoing wallet not found")
+		return
+	}
+
+	// Получение информации о входящем кошельке
+	incomingWallet, err := tx.GetWalletByID(request.To)
+	if err != nil {
+		// Возвращает ошибку, если входящий кошелек не был найден
+		// Отмена транзакции
+		tx.Rollback()
+		utils.RespondWithError(c, http.StatusNotFound, "Incoming wallet not found")
 		return
 	}
 
@@ -131,16 +127,6 @@ func (wh *WalletHandler) SendMoney(c *gin.Context) {
 		// В случае ошибки обновления баланса происходит отмента транзакции
 		tx.Rollback()
 		utils.RespondWithError(c, http.StatusBadRequest, "Failed to update outgoing wallet balance")
-		return
-	}
-
-	// Получение информации о входящем кошельке
-	incomingWallet, err := tx.GetWalletByID(request.To)
-	if err != nil {
-		// Возвращает ошибку, если входящий кошелек не был найден
-		// Отмена транзакции
-		tx.Rollback()
-		utils.RespondWithError(c, http.StatusNotFound, "Incoming wallet not found")
 		return
 	}
 
