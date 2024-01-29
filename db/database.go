@@ -41,7 +41,6 @@ func InitDB() WalletDatabase {
 		panic("Failed to connect to database")
 	}
 
-	// Отключение автоматических миграций (пересоздание таблиц)
 	db.AutoMigrate(&models.Wallet{}, &models.Transaction{})
 
 	return &walletDatabase{DB: db}
