@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -35,6 +36,11 @@ type walletDatabase struct {
 
 // InitDB инициализирует подключение к базе данных и возвращает объект, удовлетворяющий интерфейсу WalletDatabase
 func InitDB() WalletDatabase {
+
+	// Загрузка переменных окружения из файла .env
+	if err := godotenv.Load("db/.env"); err != nil {
+		fmt.Println("Error loading .env file")
+	}
 
 	// Чтение значений переменных окружения
 	dbHost := os.Getenv("DB_HOST")
