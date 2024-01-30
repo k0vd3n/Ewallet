@@ -86,7 +86,7 @@ func (wh *WalletHandler) SendMoney(c *gin.Context) {
 		// Возвращает ошибку, если входящий кошелек не был найден
 		// Отмена транзакции
 		tx.Rollback()
-		utils.RespondWithError(c, http.StatusNotFound, "Incoming wallet not found")
+		utils.RespondWithError(c, http.StatusBadRequest, "Incoming wallet not found")
 		return
 	}
 
@@ -152,6 +152,14 @@ func (wh *WalletHandler) SendMoney(c *gin.Context) {
 // GetTransactionHistory обрабатывает запрос на получение истории транзакций
 func (wh *WalletHandler) GetTransactionHistory(c *gin.Context) {
 	walletID := c.Param("walletId")
+
+	// Проверяем существование кошелька
+	_, err := wh.walletDB.GetWalletByID(walletID)
+	if err != nil {
+		// Возвращение ошибки, если кошелек не найден
+		utils.RespondWithError(c, http.StatusNotFound, "Wallet not found")
+		return
+	}
 
 	// Получение истории транзакций для указанного кошелька
 	transactions, err := wh.walletDB.GetTransactionHistory(walletID)
