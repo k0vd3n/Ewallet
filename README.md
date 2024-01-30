@@ -1,6 +1,8 @@
 # EWallet Application
 [RU](#русская-версия) | [EN](#english-version)
 
+## <a name="english-version"></a> English version
+
 The EWallet application implements a transaction processing system for the payment system. The application is an HTTP server implementing REST API.
 
 ## Technology Stack
