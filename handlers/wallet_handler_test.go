@@ -153,6 +153,9 @@ func TestGetTransactionHistory(t *testing.T) {
 	// Установление параметры запроса
 	c.Params = []gin.Param{{Key: "walletId", Value: expectedWalletID}}
 
+	// Установление ожидания вызова GetWalletByID у mockWalletDB
+	mockWalletDB.EXPECT().GetWalletByID(expectedWalletID).Return(nil, nil)
+
 	// Ожидаемые транзакции
 	expectedTransactions := []models.Transaction{
 		{
