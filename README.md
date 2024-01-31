@@ -93,6 +93,82 @@ Parameterized queries are applied using GORM, ensuring security in interacting w
 
 GORM ensures the use of parameterized queries to the database, eliminating the need for raw SQL queries and protecting the database from SQL injections.
 
+## Examples
+
+To test the operation of all 4 methods on the local host after launching the application, you can use the following queries using curl.
+
+Creating a wallet
+
+```bash
+curl --location --request POST 'http://localhost:8080/api/v1/wallet/'
+```
+
+Sample response
+
+```json
+{
+    "id":"71e1dffe61e741dcb77fa5a2c34bb4fd",
+    "balance":100
+}
+```
+
+Transfer of funds
+
+```bash
+curl --location 'http://localhost:8080/api/v1/wallet/71e1dffe61e741dcb77fa5a2c34bb4fd/send'--header 'Content-Type: application/json'--data '{"to": "e4a79ed195c14df986b9fff423f960f5", "amount": 25.0}'
+```
+
+Sample response
+
+```json
+{
+    "id":"aedaacb08dd6493b8369732b40130961",
+    "wallet_id":"71e1dffe61e741dcb77fa5a2c34bb4fd",
+    "to_wallet_id":"e4a79ed195c14df986b9fff423f960f5",
+    "amount":25,
+    "time":"2024-01-31T04:09:45.289868Z"
+}
+```
+
+Getting transaction history
+
+```bash
+curl --location 'http://localhost:8080/api/v1/wallet/71e1dffe61e741dcb77fa5a2c34bb4fd/history'
+```
+
+Sample response
+
+```json
+[
+    {
+        "amount": 10,
+        "from": "71e1dffe61e741dcb77fa5a2c34bb4fd",
+        "time": "2024-01-31T04:07:23.550619Z",
+        "to": "e4a79ed195c14df986b9fff423f960f5"
+    },
+    {
+        "amount": 25,
+        "from": "71e1dffe61e741dcb77fa5a2c34bb4fd",
+        "time": "2024-01-31T04:09:45.289868Z",
+        "to": "e4a79ed195c14df986b9fff423f960f5"
+    }
+]
+```
+
+Getting the wallet status
+
+```bash
+curl --location 'http://localhost:8080/api/v1/wallet/71e1dffe61e741dcb77fa5a2c34bb4fd/'
+```
+
+Sample response
+
+```json
+{
+    "id": "71e1dffe61e741dcb77fa5a2c34bb4fd",
+    "balance": 65
+}
+```
 
 
 
@@ -190,8 +266,83 @@ docker run -e DB_HOST=<ваш_db_host> -e DB_PORT=<ваш_db_port> -e DB_USER=<�
 
 GORM обеспечивает использование параметризованных запросов к базе данных, что позволяет не использовать чистые SQL запросы и защищает базу данных от SQL-инъекций.
 
-
-
 При создании docker image и запуске docker контейнера необходимо предусмотреть защиту конфиденциальных данных, таких как адрес сервера базы данных, порт прослушиваемый базой данных, имя пользователя, которое приложение будет использовать для подключения к базе данных, пароль для пользователя базы данных, имя базы данных. Если собранный docker image будет использоваться kubernetes, то можно использовать секреты для защиты этой информации. Секреты в kubernetes сохраняются в зашифрованном виде в хранилище etcd. Доступ к секретам также можно будет настроить через роли (Roles) и разрешения (RoleBinding), также можно настроить ограниченный доступ на уровне кластера.
 
 Если будет использоваться контейнерная версия PostgreSQL в среде Kubernetes, это может облегчить задачу взаимодействия между приложением EWallet и базой данных PostgreSQL. Так, Kubernetes предоставляет абстракцию "Сервис", которая позволяет вашим приложениям общаться с другими службами в кластере по именам сервисов. Если ваше приложение EWallet и PostgreSQL находятся в одном кластере Kubernetes, вы можете использовать DNS-имена сервисов для облегчения взаимодействия между ними.
+
+## Примеры
+
+Чтобы проверить работу всех 4 методов на локальном хосте после запуска приложения, Вы можете использовать следующие запросы при помощи curl.
+
+Создание кошелька
+
+```bash
+curl --location --request POST 'http://localhost:8080/api/v1/wallet/'
+```
+
+Пример ответа
+
+```json
+{
+    "id":"71e1dffe61e741dcb77fa5a2c34bb4fd",
+    "balance":100
+}
+```
+
+Перевод средств
+
+```bash
+curl --location 'http://localhost:8080/api/v1/wallet/71e1dffe61e741dcb77fa5a2c34bb4fd/send'--header 'Content-Type: application/json'--data '{"to": "e4a79ed195c14df986b9fff423f960f5", "amount": 25.0}'
+```
+
+Пример ответа
+
+```json
+{
+    "id":"aedaacb08dd6493b8369732b40130961",
+    "wallet_id":"71e1dffe61e741dcb77fa5a2c34bb4fd",
+    "to_wallet_id":"e4a79ed195c14df986b9fff423f960f5",
+    "amount":25,
+    "time":"2024-01-31T04:09:45.289868Z"
+}
+```
+
+Получение истории транзакций
+
+```bash
+curl --location 'http://localhost:8080/api/v1/wallet/71e1dffe61e741dcb77fa5a2c34bb4fd/history'
+```
+
+Пример ответа
+
+```json
+[
+    {
+        "amount": 10,
+        "from": "71e1dffe61e741dcb77fa5a2c34bb4fd",
+        "time": "2024-01-31T04:07:23.550619Z",
+        "to": "e4a79ed195c14df986b9fff423f960f5"
+    },
+    {
+        "amount": 25,
+        "from": "71e1dffe61e741dcb77fa5a2c34bb4fd",
+        "time": "2024-01-31T04:09:45.289868Z",
+        "to": "e4a79ed195c14df986b9fff423f960f5"
+    }
+]
+```
+
+Получение состояния кошелька
+
+```bash
+curl --location 'http://localhost:8080/api/v1/wallet/71e1dffe61e741dcb77fa5a2c34bb4fd/'
+```
+
+Пример ответа
+
+```json
+{
+    "id": "71e1dffe61e741dcb77fa5a2c34bb4fd",
+    "balance": 65
+}
+```
