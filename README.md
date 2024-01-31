@@ -5,7 +5,7 @@
 
 The EWallet application implements a transaction processing system for the payment system. The application is an HTTP server implementing REST API.
 
-## Technology Stack
+## Technology stack
 
 - **Programming Language:** Go
 - **Web Framework:** Gin
@@ -17,25 +17,25 @@ The EWallet application implements a transaction processing system for the payme
 - **Assertion and Testing Library:** testify/assert
 - **Library for Working with Environment Variables:** godotenv
 
-## Database and ER Diagram
+## Database and ER diagram
 
 The application uses PostgreSQL as the database management system to store data. A database with two tables is created: `wallets` and `transactions`. The structure and relationships of the tables are depicted in the ER diagram.
 
 ![ER Diagram](images/image1.png)
 
-## Gin Web Framework
+## Gin web framework
 
 Gin web framework is used for implementing the HTTP server. Gin allows for easy creation and handling of requests, ensuring high performance. An example of using Gin is presented in the `api/wallet.go` file.
 
-## GORM and Database Binding
+## GORM and database binding
 
 GORM, an Object-Relational Mapping tool, is used for interacting with the database. GORM enables mapping data structures in Go to database tables, facilitating query execution and ensuring data security. An example of using GORM is presented in the `db/database.go` file, where methods for database operations are defined.
 
-## Generating Unique Identifiers
+## Generating unique identifiers
 
 The `github.com/google/uuid` library is used for generating unique identifiers in the project. This library provides functionality for working with Universally Unique Identifiers (UUIDs), which are unique identifiers used for object identification in the system. The generated UUIDs have hyphens removed using a function. This process of generating UUIDs without hyphens is applied to ensure compatibility with the format specified in the OpenAPI file.
 
-## Project Structure
+## Project structure
 
 The project is divided into the following directories:
 
@@ -46,7 +46,7 @@ The project is divided into the following directories:
 - `db`: Contains code for interacting with the database, including interface definitions, mocks, and connection settings.
 - `images`: For storing images used in the README.
 
-## Roles of Important Files and Directories
+## Roles of important files and directories
 
 - `api/wallet.go`: Contains logic for handling HTTP requests related to wallets.
 - `utils/response.go`: Provides convenient functions for generating HTTP responses with various statuses and error messages.
@@ -56,7 +56,7 @@ The project is divided into the following directories:
 - `models/wallet.go`: Defines data structures for wallets and transactions.
 - `main.go`: Entry point of the application, where the HTTP server and request handlers are initialized.
 
-## Summary of Request Handlers Logic
+## Summary of request handlers logic
 
 The `handlers/wallet_handler.go` file implements four methods for handling core wallet operations:
 
@@ -65,7 +65,7 @@ The `handlers/wallet_handler.go` file implements four methods for handling core 
 3. Retrieving Transaction History: `GetTransactionHistory`
 4. Retrieving Wallet Balance: `GetWalletBalance`
 
-## Unit Tests
+## Unit tests
 
 Simple unit tests are written, presented in the `handlers/wallet_handler_test.go` file, for the four main methods using a mock database. The tests cover the main scenario and do not consider unsuccessful scenarios of user parameter input.
 
@@ -200,15 +200,15 @@ Sample response
 
 Для реализации HTTP-сервера используется веб-фреймворк Gin. Gin позволяет легко создавать и обрабатывать запросы, обеспечивая высокую производительность. Пример использования Gin представлен в файле `api/wallet.go`.
 
-## GORM и Связывание с Базой Данных
+## GORM и связывание с базой данных
 
 Для взаимодействия с базой данных используется ORM (Object-Relational Mapping) GORM. GORM позволяет связать структуры данных в Go с таблицами в базе данных, облегчая выполнение запросов и обеспечивая безопасность данных. Пример использования GORM представлен в файле `db/database.go`, где определены методы для выполнения операций в базе данных.
 
-## Генерация Уникальных Идентификаторов
+## Генерация уникальных идентификаторов
 
 Для генерации уникальных идентификаторов в проекте используется библиотека `github.com/google/uuid`. Эта библиотека предоставляет функционал для работы с UUID (Universally Unique Identifier) — уникальным идентификатором, который используется для идентификации объектов в системе. В сгенерированном UUID удаляются дефисы с использованием функции. Данный процесс генерации UUID без дефисов применяется, чтобы обеспечить совместимость с форматом, указанным в OpenAPI файле.
 
-## Структура Проекта
+## Структура проекта
 
 Проект разбит на следующие директории:
 
